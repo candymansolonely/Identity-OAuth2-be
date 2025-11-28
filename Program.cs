@@ -42,12 +42,11 @@ namespace IdentityOAuth2
             {
                 options.ForwardedHeaders =
                     ForwardedHeaders.XForwardedFor |
-                    ForwardedHeaders.XForwardedProto |
-                    ForwardedHeaders.XForwardedHost;
+                    ForwardedHeaders.XForwardedProto;
 
-                // Trust all proxies (Cloudflare)
-                options.KnownNetworks.Clear();
+                // Nếu dùng reverse proxy như cloudflare
                 options.KnownProxies.Clear();
+                options.KnownNetworks.Clear();
             });
 
             //// OpenIddict
@@ -74,20 +73,12 @@ namespace IdentityOAuth2
 
                            .AddDevelopmentEncryptionCertificate()
                            .AddDevelopmentSigningCertificate()
-
                            .UseAspNetCore()
                            .EnableAuthorizationEndpointPassthrough()
                            //.EnableTokenEndpointPassthrough()
                            ;
                 })
                 .AddValidation(opt => { opt.UseLocalServer(); opt.UseAspNetCore(); });
-
-
-            // External Auth Service
-            //builder.Services.AddHttpClient<ExternalAuthService>();
-
-            // Custom authen username/password
-            //builder.Services.AddScoped<IUserValidator<IdentityUser>, CustomUserValidator>();
 
             builder.Services.AddControllers();
 
@@ -96,7 +87,7 @@ namespace IdentityOAuth2
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
-
+            app.UseForwardedHeaders();
             //app.UseDeveloperExceptionPage();
             //app.UseStatusCodePagesWithReExecute("/error");
 
