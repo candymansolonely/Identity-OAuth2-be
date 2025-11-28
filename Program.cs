@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MSC.Identity.Models.Entities;
@@ -36,6 +37,18 @@ namespace IdentityOAuth2
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Chỉ gửi qua HTTPS
             });
 
+            // Configure Forwarded Headers TRƯỚC KHI add OpenIddict
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto |
+                    ForwardedHeaders.XForwardedHost;
+
+                // Trust all proxies (Cloudflare)
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+            });
 
             //// OpenIddict
             builder.Services.AddOpenIddict()
