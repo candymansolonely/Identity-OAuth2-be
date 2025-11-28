@@ -86,7 +86,7 @@ namespace MSC.Identity.Controllers
             return Ok(new { ok = true });
         }
     
-        public async void SeedAdmin()
+        async void SeedAdmin()
         {
             var admin = await _openIddictApplicationManager.FindByClientIdAsync(_configuration["ApplicationClients:AdminId"]);
             if (admin is null)
