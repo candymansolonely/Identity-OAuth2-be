@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MSC.Identity.Models.Entities;
 using OpenIddict.Abstractions;
-
 namespace IdentityOAuth2
 {
     public class Program
@@ -26,8 +24,7 @@ namespace IdentityOAuth2
             {
                 builder.WithOrigins(allowOrigins)
                        .AllowAnyMethod()
-                       .AllowAnyHeader()
-                       .AllowCredentials();
+                       .AllowAnyHeader();
             }));
             builder.Services.ConfigureApplicationCookie(options =>
             {
@@ -47,6 +44,8 @@ namespace IdentityOAuth2
                 // Nếu dùng reverse proxy như cloudflare
                 options.KnownProxies.Clear();
                 options.KnownNetworks.Clear();
+
+                options.RequireHeaderSymmetry = false;
             });
 
             //// OpenIddict
@@ -75,8 +74,9 @@ namespace IdentityOAuth2
                            .AddDevelopmentSigningCertificate()
                            .UseAspNetCore()
                            .EnableAuthorizationEndpointPassthrough()
-                           //.EnableTokenEndpointPassthrough()
-                           ;
+                            .DisableTransportSecurityRequirement();
+                    //.EnableTokenEndpointPassthrough()
+                    ;
                 })
                 .AddValidation(opt => { opt.UseLocalServer(); opt.UseAspNetCore(); });
 
@@ -91,11 +91,9 @@ namespace IdentityOAuth2
             //app.UseDeveloperExceptionPage();
             //app.UseStatusCodePagesWithReExecute("/error");
 
-            //app.UseForwardedHeaders();
 
             app.UseCors("MSCPolicy");
 
-            //app.UseForwardedHeaders();
 
             app.UseRouting();
 
