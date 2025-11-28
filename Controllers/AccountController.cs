@@ -34,5 +34,16 @@ namespace IdentityOAuth2.Controllers
             await _signInManager.SignOutAsync();
             return Ok(new { ok = true });
         }
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok(new
+            {
+                scheme = Request.Scheme,
+                host = Request.Host.Value,
+                path = Request.Path,
+                forwarded = Request.Headers["X-Forwarded-Proto"].ToString()
+            });
+        }
     }
 }

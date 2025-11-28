@@ -90,7 +90,7 @@ namespace IdentityOAuth2
             app.UseForwardedHeaders();
             //app.UseDeveloperExceptionPage();
             //app.UseStatusCodePagesWithReExecute("/error");
-            app.UseHttpsRedirection();
+
 
             app.UseCors("MSCPolicy");
 
