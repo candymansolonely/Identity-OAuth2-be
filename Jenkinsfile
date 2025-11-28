@@ -5,7 +5,7 @@ pipeline {
         CONTAINER_NAME = "identity-be"
         PORT_HOST = "1000"
         PORT_CONTAINER = "8080"
-        REPO_URL = "https://github.com/LHTrungSkySP/lht.Identity-OAuth2-be.git"
+        REPO_URL = "https://github.com/candymansolonely/Identity-OAuth2-be.git"
     }
     stages {
         stage('Checkout branch') {
