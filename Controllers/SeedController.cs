@@ -40,7 +40,7 @@ namespace MSC.Identity.Controllers
                 var ret = await _userManager.CreateAsync(alice, "Admin1!");
             }
 
-            var adminClient = await _openIddictApplicationManager.FindByClientIdAsync(_configuration["ApplicationClients:AERPClientId"]);
+            var AERPClient = await _openIddictApplicationManager.FindByClientIdAsync(_configuration["ApplicationClients:AERPClientId"]);
             if (await _openIddictApplicationManager.FindByClientIdAsync("AERP") is null)
             {
                 await _openIddictApplicationManager.CreateAsync(new OpenIddictApplicationDescriptor
@@ -67,8 +67,69 @@ namespace MSC.Identity.Controllers
                     }
                 });
             }
+            else
+            {
+                var descriptor = new OpenIddictApplicationDescriptor();
+                await _openIddictApplicationManager.PopulateAsync(descriptor, AERPClient);
 
+                descriptor.ClientSecret = _configuration["ApplicationClients:AERPClientId"];
+                descriptor.RedirectUris.Clear();
+                descriptor.RedirectUris.Add(new Uri($"{_configuration["ApplicationClients:AERPBEUrl"]}/swagger/oauth2-redirect.html"));
+                descriptor.RedirectUris.Add(new Uri($"{_configuration["ApplicationClients:AERPFEUrl"]}/oauth2-callback"));
+                descriptor.PostLogoutRedirectUris.Clear();
+                descriptor.PostLogoutRedirectUris.Add(new Uri($"{_configuration["ApplicationClients:AERPFEUrl"]}/signout-callback-oidc"));
+
+                // Ghi lại vào DB
+                await _openIddictApplicationManager.UpdateAsync(AERPClient, descriptor);
+            }
+            SeedAdmin();
             return Ok(new { ok = true });
+        }
+    
+        public async void SeedAdmin()
+        {
+            var admin = await _openIddictApplicationManager.FindByClientIdAsync(_configuration["ApplicationClients:AdminId"]);
+            if (admin is null)
+            {
+                await _openIddictApplicationManager.CreateAsync(new OpenIddictApplicationDescriptor
+                {
+                    ClientId = _configuration["ApplicationClients:AdminId"],
+                    ClientSecret = _configuration["ApplicationClients:Admin_client_secret"],
+                    DisplayName = "Admin Client",
+                    ClientType = ClientTypes.Confidential,
+                    RedirectUris = { new Uri($"{_configuration["ApplicationClients:AdminBEUrl"]}/swagger/oauth2-redirect.html"), new Uri($"{_configuration["ApplicationClients:AdminFEUrl"]}/oauth2-callback") },
+                    PostLogoutRedirectUris = { new Uri($"{_configuration["ApplicationClients:AdminFEUrl"]}/signout-callback-oidc") },
+                    Permissions =
+                    {
+                        Permissions.Endpoints.Authorization,
+                        Permissions.Endpoints.Token,
+                        Permissions.Endpoints.Introspection,
+                        Permissions.GrantTypes.AuthorizationCode,
+                        Permissions.GrantTypes.RefreshToken,
+                        Permissions.GrantTypes.ClientCredentials,
+                        Permissions.ResponseTypes.Code,
+                        Permissions.Prefixes.Scope + "openid",
+                        Permissions.Prefixes.Scope + "profile",
+                        Permissions.Prefixes.Scope + "api",
+                        Permissions.Prefixes.Scope + "offline_access"
+                    }
+                });
+            }
+            else
+            {
+                var descriptor = new OpenIddictApplicationDescriptor();
+                await _openIddictApplicationManager.PopulateAsync(descriptor, admin);
+
+                descriptor.ClientSecret = _configuration["ApplicationClients:AdminId"];
+                descriptor.RedirectUris.Clear();
+                descriptor.RedirectUris.Add(new Uri($"{_configuration["ApplicationClients:AdminBEUrl"]}/swagger/oauth2-redirect.html"));
+                descriptor.RedirectUris.Add(new Uri($"{_configuration["ApplicationClients:AdminFEUrl"]}/oauth2-callback"));
+                descriptor.PostLogoutRedirectUris.Clear();
+                descriptor.PostLogoutRedirectUris.Add(new Uri($"{_configuration["ApplicationClients:AdminFEUrl"]}/signout-callback-oidc"));
+
+                // Ghi lại vào DB
+                await _openIddictApplicationManager.UpdateAsync(admin, descriptor);
+            }
         }
     }
 }
