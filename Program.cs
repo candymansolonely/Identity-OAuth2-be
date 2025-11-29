@@ -25,7 +25,8 @@ namespace IdentityOAuth2
             {
                 builder.WithOrigins(allowOrigins)
                        .AllowAnyMethod()
-                       .AllowAnyHeader();
+                       .AllowAnyHeader()
+                       .AllowCredentials();
             }));
             builder.Services.ConfigureApplicationCookie(options =>
             {
