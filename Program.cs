@@ -34,6 +34,7 @@ namespace IdentityOAuth2
                 options.Cookie.Name = "lht.identity.server";
                 options.Cookie.SameSite = SameSiteMode.None; // Cho phép cross-site
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Chỉ gửi qua HTTPS
+                options.Cookie.HttpOnly = false;
             });
 
             // Configure Forwarded Headers TRƯỚC KHI add OpenIddict
