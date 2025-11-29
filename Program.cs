@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.HttpOverrides;
+﻿using IdentityOAuth2.Models.Common;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MSC.Identity.Models.Entities;
@@ -85,6 +86,8 @@ namespace IdentityOAuth2
             //builder.Services.AddEndpointsApiExplorer(); //??
 
             builder.Services.AddSwaggerGen();
+
+            builder.Services.Configure<AppClientOptions>(builder.Configuration);
 
             var app = builder.Build();
             app.UseForwardedHeaders();

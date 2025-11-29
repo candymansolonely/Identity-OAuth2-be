@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using IdentityOAuth2.Models.Common;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MSC.Identity.Models;
@@ -24,81 +25,36 @@ namespace MSC.Identity.Controllers
             IConfiguration configuration
             )
         {
+            _configuration = configuration;
             _context = context;
             _userManager = userManager;
             _openIddictApplicationManager = openIddictApplicationManager;
-            _configuration = configuration;
         }
 
         [HttpPost("seed")]
         public async Task<IActionResult> Seed()
         {
-            var alice = await _userManager.FindByEmailAsync("lehoangtrung038582@gmail.vn");
-            if (alice == null)
+            List<ApplicationClient> applicationClients = _configuration.GetSection("ApplicationClients").Get<List<ApplicationClient>>();
+            foreach (var client in applicationClients)
             {
-                alice = new IdentityUser { UserName = "admin", Email = "lehoangtrung038582@gmail.vn", EmailConfirmed = true };
-                var ret = await _userManager.CreateAsync(alice, "Admin1!");
+                await SeedApp(client);
             }
-
-            var AERPClient = await _openIddictApplicationManager.FindByClientIdAsync(_configuration["ApplicationClients:AERPClientId"]);
-            if (await _openIddictApplicationManager.FindByClientIdAsync("AERP") is null)
-            {
-                await _openIddictApplicationManager.CreateAsync(new OpenIddictApplicationDescriptor
-                {
-                    ClientId = _configuration["ApplicationClients:AERPClientId"],
-                    ClientSecret = _configuration["ApplicationClients:AERPClientSecret"],
-                    DisplayName = "AERP Client",
-                    ClientType = ClientTypes.Confidential,
-                    RedirectUris = { new Uri($"{_configuration["ApplicationClients:AERPBEUrl"]}/swagger/oauth2-redirect.html"), new Uri($"{_configuration["ApplicationClients:AERPFEUrl"]}/oauth2-callback") },
-                    PostLogoutRedirectUris = { new Uri($"{_configuration["ApplicationClients:AERPFEUrl"]}/signout-callback-oidc") },
-                    Permissions =
-                    {
-                        Permissions.Endpoints.Authorization,
-                        Permissions.Endpoints.Token,
-                        Permissions.Endpoints.Introspection,
-                        Permissions.GrantTypes.AuthorizationCode,
-                        Permissions.GrantTypes.RefreshToken,
-                        Permissions.GrantTypes.ClientCredentials,
-                        Permissions.ResponseTypes.Code,
-                        Permissions.Prefixes.Scope + "openid",
-                        Permissions.Prefixes.Scope + "profile",
-                        Permissions.Prefixes.Scope + "api",
-                        Permissions.Prefixes.Scope + "offline_access"
-                    }
-                });
-            }
-            else
-            {
-                var descriptor = new OpenIddictApplicationDescriptor();
-                await _openIddictApplicationManager.PopulateAsync(descriptor, AERPClient);
-
-                descriptor.ClientSecret = _configuration["ApplicationClients:AERPClientId"];
-                descriptor.RedirectUris.Clear();
-                descriptor.RedirectUris.Add(new Uri($"{_configuration["ApplicationClients:AERPBEUrl"]}/swagger/oauth2-redirect.html"));
-                descriptor.RedirectUris.Add(new Uri($"{_configuration["ApplicationClients:AERPFEUrl"]}/oauth2-callback"));
-                descriptor.PostLogoutRedirectUris.Clear();
-                descriptor.PostLogoutRedirectUris.Add(new Uri($"{_configuration["ApplicationClients:AERPFEUrl"]}/signout-callback-oidc"));
-
-                // Ghi lại vào DB
-                await _openIddictApplicationManager.UpdateAsync(AERPClient, descriptor);
-            }
-            SeedAdmin();
             return Ok(new { ok = true });
         }
     
-        async void SeedAdmin()
+        async Task SeedApp(ApplicationClient client)
         {
-            var admin = await _openIddictApplicationManager.FindByClientIdAsync(_configuration["ApplicationClients:AdminId"]);
-            if (admin is null)
+            var clientData = await _openIddictApplicationManager.FindByClientIdAsync(client.ClientId);
+            if (clientData is null)
             {
                 await _openIddictApplicationManager.CreateAsync(new OpenIddictApplicationDescriptor
                 {
-                    ClientId = _configuration["ApplicationClients:AdminId"],
-                    ClientSecret = _configuration["ApplicationClients:Admin_client_secret"],
-                    DisplayName = "Admin Client",
+                    ClientId = client.ClientId,
+                    ClientSecret = client.Secret,
+                    DisplayName = client.ClientId,
                     ClientType = ClientTypes.Confidential,
-                    RedirectUris = { new Uri($"{_configuration["ApplicationClients:AdminBEUrl"]}/swagger/oauth2-redirect.html"), new Uri($"{_configuration["ApplicationClients:AdminFEUrl"]}/oauth2-callback") },
-                    PostLogoutRedirectUris = { new Uri($"{_configuration["ApplicationClients:AdminFEUrl"]}/signout-callback-oidc") },
+                    RedirectUris = { new Uri($"{client.BEUrl}/swagger/oauth2-redirect.html"), new Uri($"{client.FEUrl}/oauth2-callback") },
+                    PostLogoutRedirectUris = { new Uri($"{client.FEUrl}/signout-callback-oidc") },
                     Permissions =
                     {
                         Permissions.Endpoints.Authorization,
@@ -118,17 +74,17 @@ namespace MSC.Identity.Controllers
             else
             {
                 var descriptor = new OpenIddictApplicationDescriptor();
-                await _openIddictApplicationManager.PopulateAsync(descriptor, admin);
+                await _openIddictApplicationManager.PopulateAsync(descriptor, clientData);
 
-                descriptor.ClientSecret = _configuration["ApplicationClients:AdminId"];
+                descriptor.ClientSecret = client.Secret;
                 descriptor.RedirectUris.Clear();
-                descriptor.RedirectUris.Add(new Uri($"{_configuration["ApplicationClients:AdminBEUrl"]}/swagger/oauth2-redirect.html"));
-                descriptor.RedirectUris.Add(new Uri($"{_configuration["ApplicationClients:AdminFEUrl"]}/oauth2-callback"));
+                descriptor.RedirectUris.Add(new Uri($"{client.BEUrl}/swagger/oauth2-redirect.html"));
+                descriptor.RedirectUris.Add(new Uri($"{client.FEUrl}/oauth2-callback"));
                 descriptor.PostLogoutRedirectUris.Clear();
-                descriptor.PostLogoutRedirectUris.Add(new Uri($"{_configuration["ApplicationClients:AdminFEUrl"]}/signout-callback-oidc"));
+                descriptor.PostLogoutRedirectUris.Add(new Uri($"{client.FEUrl}/signout-callback-oidc"));
 
                 // Ghi lại vào DB
-                await _openIddictApplicationManager.UpdateAsync(admin, descriptor);
+                await _openIddictApplicationManager.UpdateAsync(clientData, descriptor);
             }
         }
     }
