@@ -5,6 +5,7 @@ pipeline {
         CONTAINER_NAME = "identity-be"
         PORT_HOST = "1000"
         PORT_CONTAINER = "8080"
+        NETWORK = "aerp_internal_net"
         REPO_URL = "https://github.com/candymansolonely/Identity-OAuth2-be.git"
     }
     stages {
@@ -34,7 +35,7 @@ pipeline {
                 sh '''
                     docker rm -f ${CONTAINER_NAME} || true
                     docker run -d --name ${CONTAINER_NAME} \
-                    --network postgresql_internal_net -p ${PORT_HOST}:${PORT_CONTAINER} ${IMAGE_NAME}:latest
+                    --network ${NETWORK} -p ${PORT_HOST}:${PORT_CONTAINER} ${IMAGE_NAME}:latest
                 '''
             }
         }
